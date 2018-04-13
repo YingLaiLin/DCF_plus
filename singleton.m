@@ -54,19 +54,44 @@ id = intersect(ip,iq);
 % ScoreMatrix = ScoreMatrix(id(:,1),:);
 % rate = recall(known', ScoreMatrix', 100);
 % rate = recall(known(id(:,1),:) , ScoreMatrix(id(:,1),:), 100);
-load('ScoreMatrix.mat');
-rate_DCF = recall(known(:,id(:,1)) , ScoreMatrix(:,id(:,1)), 100);
-% precision_IMC = precision(known(:,id(:,1)), ScoreMatrix(:,id(:,1)), 100);
-load('ScoreMatrix_0.8.mat');
-rate_DCF_8 = recall(known(:,id(:,1)) , ScoreMatrix(:,id(:,1)), 100);
-% DCF+0.8
+
+fileNames = dir('ScoreMatrix*.mat');
+fileSize = size(fileNames);
+rates = cell(fileSize);
+hwait = waitbar(0, 'Please wait for data preprocessing');
+for iFileIndex = 1:fileSize(1)
+    load(fileNames(iFileIndex).name)
+    rates{iFileIndex} = recall(known(:,id(:,1)) , ScoreMatrix(:,id(:,1)), 100);    
+    str = ['正在运行中', num2str(iFileIndex / fileSize(1)),'%'];
+    waitbar(iFileIndex / fileSize(1), hwait, str)
+end
+close(hwait)
+
 x = 1:100
-figure();
-plot(x,rate_DCF(1:100),'-',x, rate_DCF_8(1:100),'--');
+hold on
+for iFileIndex = 1 : fileSize
+    plot(x,rates{iFileIndex}(1:100),'-');
+end
+
 
 xlabel('Number of genes looked at');
 ylabel('P(hidden gene among genes looked at)');
+legend(fileNames.name)
 grid on
+
+% load('ScoreMatrix.mat');
+% rate_DCF = recall(known(:,id(:,1)) , ScoreMatrix(:,id(:,1)), 100);
+% % precision_IMC = precision(known(:,id(:,1)), ScoreMatrix(:,id(:,1)), 100);
+% load('ScoreMatrix_0.8.mat');
+% rate_DCF_8 = recall(known(:,id(:,1)) , ScoreMatrix(:,id(:,1)), 100);
+% % DCF+0.8
+% x = 1:100
+% figure();
+% plot(x,rate_DCF(1:100),'-',x, rate_DCF_8(1:100),'--');
+% 
+% xlabel('Number of genes looked at');
+% ylabel('P(hidden gene among genes looked at)');
+% grid on
 
 % save rate_DCF1.mat rate_DCF1;
 

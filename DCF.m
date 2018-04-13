@@ -1,10 +1,9 @@
-function ScoreMatrix = DCF(split, k, featureRank, networkRank, lambda, alpha, alpha_gen)
+function ScoreMatrix = DCF(split, k, featureRank, networkRank, lambda, alpha)
 %%%% INPUT PARAMS:
 %%% split       : One of the k-fold splits to be hidden.  %% 留一验证法, 记住用于训练的集合
 %%% k           : Rank of the parameter matrix Z. %% 作为参数的矩阵的秩
 %%% featureRank : Number of compressed dimensions (microarray gene expression data). %% 希望得到的数据降维之后的维度
 %%% networkRank : Number of latent features from similarity networks. %% 相似性网络的维度
-%%% loss	    : loss function to be used (10 - for squared loss) %% 损失函数的参数
 %%% lambda      : Regularization parameter l in the objective. %% ?
 %%% alpha       : the parameter r for PU formulation  %% ?
 
@@ -76,8 +75,8 @@ if (networkRank > 0)
     %     clear sdae_data.H
     mat_gen_feature = load('ggi_gen.mat'); %  可以尝试 dis 和 gen 的组合
     mat_dis_feature = load('ggi_dis.mat');
-    gen_features = alpha_gen * mat_gen_feature.features + (1-alpha_gen) * mat_dis_feature.features;
-    features = [features gen_features(1:genesPhenes.numGenes,:)];
+    
+    features = [features mat_gen_feature.features(1:genesPhenes.numGenes,:) mat_dis_feature.features(1:genesPhenes.numGenes,:)];
     % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
     % 中的每个 Cell
     GP_sp = [];
@@ -142,7 +141,7 @@ else
 end
 
 ScoreMatrix = features * W *H' * colFeatures';
-scoreMatrixFilename = sprintf('ScoreMatrix_%.1f.mat',alpha_gen);
+scoreMatrixFilename = sprintf('ScoreMatrix_coupled.mat');
 save(scoreMatrixFilename,'ScoreMatrix');
 send_mail_upon_finished('program finished','Your program is finished', '18850544602@163.com');
 end
