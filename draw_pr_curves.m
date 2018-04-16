@@ -28,7 +28,7 @@ for iFileIndex = 1:fileSize(1)
 end
 close(hwait)
 %plot each DCF model with specific name
-x = 1:100
+x = 1:100;
 hold on
 for iFileIndex = 1 : fileSize
    plot(rates{iFileIndex}, precisions{iFileIndex});

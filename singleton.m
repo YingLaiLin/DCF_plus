@@ -67,7 +67,7 @@ for iFileIndex = 1:fileSize(1)
 end
 close(hwait)
 
-x = 1:100
+x = 1:100;
 hold on
 for iFileIndex = 1 : fileSize
     plot(x,rates{iFileIndex}(1:100),'-');
