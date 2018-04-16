@@ -18,7 +18,7 @@ else
 end
 rand('seed',11112);
 % my.save = sprintf('sdae%d',sv);
-my.save = sprintf(filename);
+my.save = sprintf(filename)
 my.folder = fd;
 my.weight_decay = 1e-4; % default is 1e-4
 % my.weight_decay = 0.005;
@@ -26,7 +26,7 @@ my.dropout = dpt;
 my.iter = 1;
 do_pretrain = 1;
 %gpuDevice(gd);
-%gpuDevice;
+gpuDevice;
 
 my.save_lag = sl;
 my.sdae.n_epoch = nepo;
