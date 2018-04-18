@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 function normal = normalization(x)
 
 [m,n]  = size(x);
@@ -13,5 +14,7 @@ for i = 1:m
         normal(i,:) = ( x(i,:)-mi )./( ma-mi );
     end
 end
+
+
 
 
