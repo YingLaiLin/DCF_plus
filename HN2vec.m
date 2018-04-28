@@ -102,7 +102,7 @@ if (networkRank > 0)
 %     
     % Reducing dimensionality of  disease similarities network
     uFilename = 'U.mat';
-    if ~exist(colFeaturesFilename,'file')
+    if ~exist(uFilename,'file')
         [U,S] = svds(genesPhenes.PhenotypeSimilaritiesLog(1:numPhenes,1:numPhenes), networkRank);
         save uFilename U
         clear S
