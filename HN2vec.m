@@ -78,8 +78,7 @@ if (networkRank > 0)
     %     clear sdae_data.H
     network_filename = 'HumanNet.mat';
     network_features = load(network_filename);
-    features = [features mat_gen_feature.features(1:genesPhenes.numGenes,:) network_features.features(1:genesPhenes.numGenes,:)];
-    % 可以尝试 两者 0.5 的组合, 而不是拼接..
+    features = [features network_features.features(1:genesPhenes.numGenes,:) ];
     % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
     % 中的每个 Cell
     GP_sp = [];
@@ -103,7 +102,7 @@ if (networkRank > 0)
 %     
     % Reducing dimensionality of  disease similarities network
     uFilename = 'U.mat';
-    if ~exist(colFeaturesFilename,'file')
+    if ~exist(uFilename,'file')
         [U,S] = svds(genesPhenes.PhenotypeSimilaritiesLog(1:numPhenes,1:numPhenes), networkRank);
         save uFilename U
         clear S
