@@ -76,7 +76,7 @@ if (networkRank > 0)
     %     sdae_data = load('sdae999.mat');
     %     features = [features sdae_data.H(1:gene_phenes.numGenes,:)];
     %     clear sdae_data.H
-    network_filename = "HumanNet.mat";
+    network_filename = 'HumanNet.mat';
     network_features = load(network_filename);
     features = [features mat_gen_feature.features(1:genesPhenes.numGenes,:) network_features.features(1:genesPhenes.numGenes,:)];
     % 可以尝试 两者 0.5 的组合, 而不是拼接..

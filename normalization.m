@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 function normal = normalization(x)
 
 [m,n]  = size(x);
