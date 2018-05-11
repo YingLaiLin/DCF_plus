@@ -1,5 +1,5 @@
 
-function ScoreMatrix = HN2vec(split, k, featureRank, networkRank, lambda, alpha, sample_threshold,emb_dim)
+function ScoreMatrix = IMC(split, k, featureRank, networkRank, loss, lambda, emb_dim)
 %%%% INPUT PARAMS:
 %%% split       : One of the k-fold splits to be hidden.  %% 留一验证法, 记住用于训练的集合
 %%% k           : Rank of the parameter matrix Z. %% 作为参数的矩阵的秩
@@ -40,33 +40,18 @@ colFeatures = []; %% 列特征 -- disease
 
 % 分别对 Gene 和 Disease 进行降维
 if (featureRank == Inf)	%%如果需要的维度很大, 那么不需要降维, 直接返回默认矩阵
-    features = geneFeatures.GeneFeatures; %% SVD 的两个分解矩阵?
-    colFeatures = clinicalFeatures.colFeatures;	%%
+    features = geneFeatures.GeneFeatures;  
+%     colFeatures = clinicalFeatures.colFeatures;	
+    colFeatures = clinicalFeatures.F;	
 elseif (featureRank > 0)
     disp ('Reducing feature dimensionality..');
     % Reducing dimensionality of microarray
-    geneFeatures.GeneFeatures = normalization(geneFeatures.GeneFeatures); %% 归一化
-    microarray_filename = [REDUCTION_MICROARRAY_FILENAME,POSTFIX_OF_DATA];
-    % reducation on microarray
-    if ~exist(microarray_filename,'file')   % 2 specified file type
-        disp(microarray_filename)
-        disp(~exist(microarray_filename,'file'))
-        mysdae(geneFeatures.GeneFeatures, featureRank, 0, REDUCTION_MICROARRAY_FILENAME);
-    end
-    sdae_data = load(microarray_filename);
-    features = sdae_data.H;
-    clear sdae_data.H;
-    
-    
+    [U,S] = svd(geneFeatures.GeneFeatures' * geneFeatures.GeneFeatures);
+    features = geneFeatures.GeneFeatures * U(:, 1 : featureRank);
     % Reducing dimensionality of OMIM pages
-    colFeaturesFilename = 'pre_colFeatures.mat';
-    if ~exist(colFeaturesFilename,'file')
-        [U,S] = svds(sparse(clinicalFeatures.F(1:numPhenes,:)), featureRank); %% 使用 spaese 创建稀疏矩阵
-        colFeatures = U;
-        save colFeaturesFilename colFeatures
-    else
-        colFeatures = colFeatures;
-    end
+    [U,S] = svds(sparse(clinicalFeatures.F(1:numPhenes,:)),featureRank);
+    colFeatures = U;
+
 end
 
 if (networkRank > 0)
@@ -81,18 +66,17 @@ if (networkRank > 0)
     features = [features network_features.features(1:genesPhenes.numGenes,:) ];
     % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
     % 中的每个 Cell
+    GP_sp = [];
+    for sp=2:numel(genesPhenes.GenePhene)
+        GP = genesPhenes.GenePhene{sp};
+        for i=1:size(GP,2)
+            if(sum(GP(:,i)) > 0)
+                GP(:,i) = GP(:,i)/norm(GP(:,i));
+            end
+        end
+        GP_sp = [GP_sp GP];
+    end
     % 同源基因
-%     GP_sp = [];
-%     for sp=2:numel(genesPhenes.GenePhene)
-%         GP = genesPhenes.GenePhene{sp};
-%         for i=1:size(GP,2)
-%             if(sum(GP(:,i)) > 0)
-%                 GP(:,i) = GP(:,i)/norm(GP(:,i));
-%             end
-%         end
-%         GP_sp = [GP_sp GP];
-%     end
-%     
 %     phenotypes_filename = [REDUCTION_PHENOTYPES_FILENAME,POSTFIX_OF_DATA];
 %     if can_phenetype_embedding || ~exist(phenotypes_filename,'file')
 %         mysdae(full(GP_sp), networkRank, 1, REDUCTION_PHENOTYPES_FILENAME);
@@ -137,14 +121,14 @@ fprintf('Using %d row, %d col features.\n', size(features,2), size(colFeatures,2
 
 matrix_filename = 'P.mat';
 if can_imfTrain || ~exist(matrix_filename,'file')
-    [W,H,~,~] = imfTrain(sparse(double(genePheneTraining)), sparse(double(features)), sparse(double(colFeatures)),  ['-n 16 -t 15 -T 5 -g 20 -p 3 -a 0 -s 11 -k ', num2str(k), ' -l ', num2str(lambda),  ' -r ', num2str(alpha)]);
+    [W H time] = train_mf(sparse(double(genePheneTraining)), sparse(double(features)), sparse(double(colFeatures)), [' -l ' num2str(lambda) ' -k ' num2str(k) ' -t 10' ' -s ' num2str(loss)]); 
     save 'P.mat' W H ;
 else
     load(matrix_filename);
 end
 
 ScoreMatrix = features * W *H' * colFeatures';
-scoreMatrixFilename = sprintf('HN2vec_ScoreMatrix_%.1f_alpha_%.2f_lambda_%.2f_%d.mat',sample_threshold,alpha,lambda,emb_dim);
+scoreMatrixFilename = sprintf('IMC_ScoreMatrix_lambda_%.2f_dim_a%d.mat',lambda,emb_dim);
 save(scoreMatrixFilename,'ScoreMatrix');
 send_mail_upon_finished('HN2vec ScoreMatrix got',strcat(scoreMatrixFilename,' got') , '18850544602@163.com');
 end
