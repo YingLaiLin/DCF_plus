@@ -26,7 +26,7 @@ POSTFIX_OF_DATA = '.mat';
 
 % control whether to execute embedding
 can_phenetype_embedding = true;
-can_imfTrain = false;
+can_imfTrain = true;
 
 % 取第一个物种基因集作为训练集
 genePheneTraining = genesPhenes.GenePhene{1};
@@ -80,7 +80,8 @@ if (networkRank > 0)
   
     network_features = load(network_filename);
     features = [features network_features.features(1:genesPhenes.numGenes,:) ];
-    % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
+   %features = [network_features.features];
+   % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
     % 中的每个 Cell
     % 同源基因
 %     GP_sp = [];
@@ -143,7 +144,10 @@ if can_imfTrain || ~exist(matrix_filename,'file')
 else
     load(matrix_filename);
 end
-
+disp(size(features))
+disp(size(W))
+disp(size(H))
+disp(size(colFeatures))
 ScoreMatrix = features * W *H' * colFeatures';
 scoreMatrixFilename = sprintf('HN2vec_ScoreMatrix_%.1f_alpha_%.2f_lambda_%.2f_%d.mat',sample_threshold,alpha,lambda,emb_dim);
 save(scoreMatrixFilename,'ScoreMatrix');
