@@ -61,21 +61,21 @@ if (networkRank > 0)
     %     sdae_data = load('sdae999.mat');
     %     features = [features sdae_data.H(1:gene_phenes.numGenes,:)];
     %     clear sdae_data.H
-    network_filename = 'HumanNet.mat';
+    network_filename = 'HumanNet_mapped.mat';
     network_features = load(network_filename);
     features = [features network_features.features(1:genesPhenes.numGenes,:) ];
     % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
     % 中的每个 Cell
-    GP_sp = [];
-    for sp=2:numel(genesPhenes.GenePhene)
-        GP = genesPhenes.GenePhene{sp};
-        for i=1:size(GP,2)
-            if(sum(GP(:,i)) > 0)
-                GP(:,i) = GP(:,i)/norm(GP(:,i));
-            end
-        end
-        GP_sp = [GP_sp GP];
-    end
+    %GP_sp = [];
+    %for sp=2:numel(genesPhenes.GenePhene)
+    %    GP = genesPhenes.GenePhene{sp};
+    %    for i=1:size(GP,2)
+    %        if(sum(GP(:,i)) > 0)
+    %            GP(:,i) = GP(:,i)/norm(GP(:,i));
+    %        end
+    %    end
+    %    GP_sp = [GP_sp GP];
+    %end
     % 同源基因
 %     phenotypes_filename = [REDUCTION_PHENOTYPES_FILENAME,POSTFIX_OF_DATA];
 %     if can_phenetype_embedding || ~exist(phenotypes_filename,'file')
