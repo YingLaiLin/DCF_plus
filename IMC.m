@@ -32,8 +32,10 @@ can_imfTrain = false;
 genePheneTraining = genesPhenes.GenePhene{1};
 if (split > 0) %% else use all data to m ake predictions.
     splits = load('splitsUniform.mat');
-    numPhenes = size(splits.splits{split},2); %%返回splits 中维度2的长度,得到基因表型的维度
-    genePheneTraining = genePheneTraining(:,1:numPhenes) - splits.splits{split}; %% 为什么要做减法?
+    numPhenes = size(splits.splits{split},2); %% 选择其中一个 cell 作为测试集, 并返回 splits 列数
+    % 由于矩阵的值都是1, 故两个矩阵相减就是把一个矩阵作为训练集, 另外一个作为验证集
+    genePheneTraining = genePheneTraining(:,1:numPhenes) - splits.splits{split}; 
+    
 end
 features = [];  %% 行特征 -- gene
 colFeatures = []; %% 列特征 -- disease

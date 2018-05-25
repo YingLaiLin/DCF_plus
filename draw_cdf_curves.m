@@ -10,7 +10,8 @@ valid_data = full(splits{1});
 
 
 % DCF model and DCF_plus model
-fileNames = dir('ScoreMatrix*.mat');
+% fileNames = dir('ScoreMatrix*.mat');
+fileNames = dir('HN2*.mat');
 fileSize = size(fileNames);
 rates = cell(fileSize);
 x = 1:100;
