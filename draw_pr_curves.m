@@ -10,7 +10,7 @@ valid_data = full(splits{1,1});
 
 
 % DCF model and DCF_gen model, alpha_gen range from 0 to 1, with 0.1 as step
-fileNames = dir('HN*.mat');
+fileNames = [dir('HN2*.mat'); dir('IMC*.mat')];
 fileSize = size(fileNames);
 precisions = cell(fileSize);
 rates = cell(fileSize);
