@@ -1,0 +1,12 @@
+# .mat files
+*.mat
+
+# edges files
+*.txt
+*.cx
+
+# images 
+*.png
+*.jpeg
+
+
