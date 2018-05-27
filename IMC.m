@@ -20,12 +20,12 @@ geneFeatures = load ('geneFeatures.mat');	%% 基因特征
 clinicalFeatures = load ('clinicalFeaturesTFidf.mat'); %% 临床特征
 
 % specify filenames to save .mat files
-REDUCTION_MICROARRAY_FILENAME = 'reduction_microarray';
-REDUCTION_PHENOTYPES_FILENAME = 'reduction_phenotypes';
+REDUCTION_MICROARRAY_FILENAME = 'imc_reduction_microarray';
+REDUCTION_PHENOTYPES_FILENAME = 'imc_reduction_phenotypes';
 POSTFIX_OF_DATA = '.mat';
 
 % control whether to execute embedding
-can_phenetype_embedding = true;
+can_phenetype_embedding = false;
 can_imfTrain = false;
 
 % 取第一个物种基因集作为训练集
@@ -63,35 +63,35 @@ if (networkRank > 0)
     %     sdae_data = load('sdae999.mat');
     %     features = [features sdae_data.H(1:gene_phenes.numGenes,:)];
     %     clear sdae_data.H
-    network_filename = 'HumanNet_mapped.mat';
+    network_filename = 'PCNet.mat';
     network_features = load(network_filename);
     features = [features network_features.features(1:genesPhenes.numGenes,:) ];
     % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
     % 中的每个 Cell
-    %GP_sp = [];
-    %for sp=2:numel(genesPhenes.GenePhene)
-    %    GP = genesPhenes.GenePhene{sp};
-    %    for i=1:size(GP,2)
-    %        if(sum(GP(:,i)) > 0)
-    %            GP(:,i) = GP(:,i)/norm(GP(:,i));
-    %        end
-    %    end
-    %    GP_sp = [GP_sp GP];
-    %end
+    GP_sp = [];
+    for sp=2:numel(genesPhenes.GenePhene)
+        GP = genesPhenes.GenePhene{sp};
+        for i=1:size(GP,2)
+            if(sum(GP(:,i)) > 0)
+                GP(:,i) = GP(:,i)/norm(GP(:,i));
+            end
+        end
+        GP_sp = [GP_sp GP];
+    end
     % 同源基因
-%     phenotypes_filename = [REDUCTION_PHENOTYPES_FILENAME,POSTFIX_OF_DATA];
-%     if can_phenetype_embedding || ~exist(phenotypes_filename,'file')
-%         mysdae(full(GP_sp), networkRank, 1, REDUCTION_PHENOTYPES_FILENAME);
-%     end
-%     sdae_data = load(phenotypes_filename);
-%     features = [features sdae_data.H];
-%     clear sdae_data.H
+     phenotypes_filename = [REDUCTION_PHENOTYPES_FILENAME,POSTFIX_OF_DATA];
+     if can_phenetype_embedding || ~exist(phenotypes_filename,'file')
+         mysdae(full(GP_sp), networkRank, 1, REDUCTION_PHENOTYPES_FILENAME);
+     end
+     sdae_data = load(phenotypes_filename);
+     features = [features sdae_data.H];
+     clear sdae_data.H
 %     
     % Reducing dimensionality of  disease similarities network
-    uFilename = 'U.mat';
+    uFilename = 'IMC_U.mat';
     if ~exist(uFilename,'file')
         [U,S] = svds(genesPhenes.PhenotypeSimilaritiesLog(1:numPhenes,1:numPhenes), networkRank);
-        save uFilename U
+        save(uFilename, 'U');
         clear S
     else
         load(uFilename);
@@ -121,10 +121,11 @@ if (isempty(colFeatures))
 end
 fprintf('Using %d row, %d col features.\n', size(features,2), size(colFeatures,2));
 
-matrix_filename = 'P.mat';
+matrix_filename = 'IMC_P.mat';
+save('test_IMC.mat','genePheneTraining','features','colFeatures');
 if can_imfTrain || ~exist(matrix_filename,'file')
     [W H time] = train_mf(sparse(double(genePheneTraining)), sparse(double(features)), sparse(double(colFeatures)), [' -l ' num2str(lambda) ' -k ' num2str(k) ' -t 10' ' -s ' num2str(loss)]); 
-    save 'P.mat' W H ;
+    save(matrix_filename, 'W', 'H');
 else
     load(matrix_filename);
 end
@@ -132,7 +133,7 @@ end
 ScoreMatrix = features * W *H' * colFeatures';
 scoreMatrixFilename = sprintf('IMC_ScoreMatrix_lambda_%.2f_dim_a%d.mat',lambda,emb_dim);
 save(scoreMatrixFilename,'ScoreMatrix');
-send_mail_upon_finished('HN2vec ScoreMatrix got',strcat(scoreMatrixFilename,' got') , '18850544602@163.com');
+send_mail_upon_finished('IMC ScoreMatrix got',strcat(scoreMatrixFilename,' got') , '18850544602@163.com');
 end
 
 
