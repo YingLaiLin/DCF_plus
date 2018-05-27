@@ -1,12 +1,17 @@
 # .mat files
 *.mat
+# embedding files
+*.emb
 
 # edges files
 *.txt
 *.cx
+*.csv
 
 # images 
 *.png
 *.jpeg
 
+# log files
+*.log
 
