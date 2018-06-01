@@ -25,7 +25,7 @@ REDUCTION_PHENOTYPES_FILENAME = 'reduction_phenotypes';
 POSTFIX_OF_DATA = '.mat';
 
 % control whether to execute embedding
-can_phenetype_embedding = true;
+can_phenetype_embedding = false;
 can_imfTrain = true;
 
 % 取第一个物种基因集作为训练集
@@ -142,7 +142,7 @@ else
 end
 
 ScoreMatrix = features * W *H' * colFeatures';
-scoreMatrixFilename = sprintf('ScoreMatrix_%.1f_alpha_%.2f_lambda_%.2f.mat',sample_threshold,alpha,lambda);
+scoreMatrixFilename = sprintf('DCF_ScoreMatrix_alpha=%.2flambda=%.2f.mat',alpha,lambda);
 save(scoreMatrixFilename,'ScoreMatrix');
 send_mail_upon_finished('DCF ScoreMatrix got',strcat(scoreMatrixFilename,' got') , '18850544602@163.com');
 end
