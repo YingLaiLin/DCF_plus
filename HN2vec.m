@@ -1,5 +1,5 @@
 
-function ScoreMatrix = HN2vec(split, k, featureRank, networkRank, lambda, alpha, sample_threshold,emb_dim)
+function ScoreMatrix = HN2vec(split, k, featureRank, networkRank, lambda, alpha)
 %%%% INPUT PARAMS:
 %%% split       : One of the k-fold splits to be hidden.  %% 留一验证法, 记住用于训练的集合
 %%% k           : Rank of the parameter matrix Z. %% 作为参数的矩阵的秩
@@ -15,6 +15,7 @@ function ScoreMatrix = HN2vec(split, k, featureRank, networkRank, lambda, alpha,
 %%% Data files are provided in the same directory.
 
 % load data from file
+tic
 genesPhenes = load ('genesPhenes.mat');  %% 基因表型
 geneFeatures = load ('geneFeatures.mat');	%% 基因特征
 clinicalFeatures = load ('clinicalFeaturesTFidf.mat'); %% 临床特征
@@ -25,7 +26,7 @@ REDUCTION_PHENOTYPES_FILENAME = 'HN2vec_reduction_phenotypes';
 POSTFIX_OF_DATA = '.mat';
 
 % control whether to execute embedding
-can_phenetype_embedding = true;
+can_phenetype_embedding = false;
 can_imfTrain = true;
 
 % 取第一个物种基因集作为训练集
@@ -36,12 +37,12 @@ if (split > 0) %% else use all data to m ake predictions.
     genePheneTraining = genePheneTraining(:,1:numPhenes) - splits.splits{split}; %% 为什么要做减法?
 end
 features = [];  %% 行特征 -- gene
-colFeatures = []; %% 列特征 -- disease
+col_features = []; %% 列特征 -- disease
 
 % 分别对 Gene 和 Disease 进行降维
 if (featureRank == Inf)	%%如果需要的维度很大, 那么不需要降维, 直接返回默认矩阵
     features = geneFeatures.GeneFeatures; %% SVD 的两个分解矩阵?
-    colFeatures = clinicalFeatures.colFeatures;	%%
+    col_features = clinicalFeatures.colFeatures;	%%
 elseif (featureRank > 0)
     disp ('Reducing feature dimensionality..');
     % Reducing dimensionality of microarray
@@ -59,13 +60,14 @@ elseif (featureRank > 0)
     
     
     % Reducing dimensionality of OMIM pages
-    colFeaturesFilename = 'pre_colFeatures.mat';
-    if ~exist(colFeaturesFilename,'file')
+    col_featuresFilename = 'pre_colFeatures.mat';
+    if ~exist(col_featuresFilename,'file')
         [U,S] = svds(sparse(clinicalFeatures.F(1:numPhenes,:)), featureRank); %% 使用 spaese 创建稀疏矩阵
-        colFeatures = U;
-        save colFeaturesFilename colFeatures
+        col_features = U;
+        save(col_featuresFilename,'colFeatures')
     else
-        colFeatures = colFeatures;
+        load(col_featuresFilename);
+        col_features = colFeatures;
     end
 end
 
@@ -76,7 +78,7 @@ if (networkRank > 0)
     %     sdae_data = load('sdae999.mat');
     %     features = [features sdae_data.H(1:gene_phenes.numGenes,:)];
     %     clear sdae_data.H
-    network_filename = 'PCNet.mat';
+    network_filename = 'GeneGeneHs.mat';
   
     network_features = load(network_filename);
     features = [features network_features.features(1:genesPhenes.numGenes,:) ];
@@ -112,7 +114,7 @@ if (networkRank > 0)
     else
         load(uFilename);
     end
-    colFeatures = [colFeatures U];
+    col_features = [col_features U];
     clear U
     
 end
@@ -122,9 +124,9 @@ for i=1:size(features,2)
         features(:,i) = features(:,i)/norm(features(:,i)); %% 返回矢量或者矩阵的2-范数
     end
 end
-for i=1:size(colFeatures,2)
-    if (norm(colFeatures(:,i))>0)
-        colFeatures(:,i) = colFeatures(:,i)/norm(colFeatures(:,i));
+for i=1:size(col_features,2)
+    if (norm(col_features(:,i))>0)
+        col_features(:,i) = col_features(:,i)/norm(col_features(:,i));
     end
 end
 
@@ -132,23 +134,24 @@ end
 if (isempty(features))
     features = eye(genesPhenes.numGenes);
 end
-if (isempty(colFeatures))
-    colFeatures = eye(numPhenes);
+if (isempty(col_features))
+    col_features = eye(numPhenes);
 end
-fprintf('Using %d row, %d col features.\n', size(features,2), size(colFeatures,2));
+fprintf('Using %d row, %d col features.\n', size(features,2), size(col_features,2));
 
 matrix_filename = 'HN2vec_P.mat';
 if can_imfTrain || ~exist(matrix_filename,'file')
-    [W,H,~,~] = imfTrain(sparse(double(genePheneTraining)), sparse(double(features)), sparse(double(colFeatures)),  ['-n 16 -t 15 -T 5 -g 20 -p 3 -a 0 -s 11 -k ', num2str(k), ' -l ', num2str(lambda),  ' -r ', num2str(alpha)]);
+    [W,H,~,~] = imfTrain(sparse(double(genePheneTraining)), sparse(double(features)), sparse(double(col_features)),  ['-n 16 -t 15 -T 5 -g 20 -p 3 -a 0 -s 11 -k ', num2str(k), ' -l ', num2str(lambda),  ' -r ', num2str(alpha)]);
     save(matrix_filename,'W','H');
 else
     load(matrix_filename);
 end
 
-ScoreMatrix = features * W *H' * colFeatures';
-scoreMatrixFilename = sprintf('HN2vec_ScoreMatrix_%.1f_alpha_%.2f_lambda_%.2f_%d.mat',sample_threshold,alpha,lambda,emb_dim);
+ScoreMatrix = features * W *H' * col_features';
+scoreMatrixFilename = sprintf('HN2vec_ScoreMatrix_alpha=%.2f_lambda=%.2f.mat',alpha,lambda);
 save(scoreMatrixFilename,'ScoreMatrix');
 send_mail_upon_finished('HN2vec ScoreMatrix got',strcat(scoreMatrixFilename,' got') , '18850544602@163.com');
+toc
 end
 
 
