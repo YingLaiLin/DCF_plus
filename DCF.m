@@ -41,15 +41,13 @@ colFeatures = []; %% 列特征 -- disease
 % 分别对 Gene 和 Disease 进行降维
 if (featureRank == Inf)	%%如果需要的维度很大, 那么不需要降维, 直接返回默认矩阵
     features = geneFeatures.GeneFeatures; %% SVD 的两个分解矩阵?
-    colFeatures = clinicalFeatures.colFeatures;	%%
+    colFeatures = clinicalFeatures.F;	%%
 elseif (featureRank > 0)
     disp ('Reducing feature dimensionality..');
     % Reducing dimensionality of microarray
     geneFeatures.GeneFeatures = normalization(geneFeatures.GeneFeatures); %% 归一化
     microarray_filename = [REDUCTION_MICROARRAY_FILENAME,POSTFIX_OF_DATA];
     if ~exist(microarray_filename,'file')   % 2 specified file type
-        disp(microarray_filename)
-        disp(~exist(microarray_filename,'file'))
         mysdae(geneFeatures.GeneFeatures, featureRank, 0, REDUCTION_MICROARRAY_FILENAME);
     end
     sdae_data = load(microarray_filename);
@@ -62,22 +60,25 @@ elseif (featureRank > 0)
     if ~exist(colFeaturesFilename,'file')
         [U,S] = svds(sparse(clinicalFeatures.F(1:numPhenes,:)), featureRank); %% 使用 spaese 创建稀疏矩阵
         colFeatures = U;
-        save colFeaturesFilename colFeatures
+        save(colFeaturesFilename,'colFeatures');
     else
-        colFeatures = colFeatures;
+        z = load(colFeaturesFilename);
+        colFeatures = z.colFeatures;
     end
 end
 
 if (networkRank > 0)
     disp ('Reducing gene network dimensionality..');
     % Reducing dimensionality of gene-gene interaction network
-    ggHsFilename = 'GeneGene_HS';
-    ggHsFile = [ggHsFilename,POSTFIX_OF_DATA];
-    if ~exist(ggHsFile, 'file')
-        mysdae(full(genesPhenes.GeneGene_Hs), networkRank, 1, ggHsFilename);
-        sdae_data = load(ggHsFile);
-        features = [features sdae_data.H(1:gene_phenes.numGenes,:)];
-    end
+    %GGHS = 'GeneGene_HS';
+    %ggHsFile = [GGHS,POSTFIX_OF_DATA];
+    %if ~exist(ggHsFile, 'file')
+    %    mysdae(full(genesPhenes.GeneGene_Hs), networkRank, 1, GGHS);
+    %end
+    %sdae_data = load(ggHsFile);
+    %features = [features sdae_data.H(1:genesPhenes.numGenes,:)];
+    sdae_feature = load('GeneGeneHs.mat');
+    features = [features sdae_feature.features(1:genesPhenes.numGenes,:)];
     % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
     % 中的每个 Cell
     GP_sp = [];
