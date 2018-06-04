@@ -1,5 +1,5 @@
 
-function ScoreMatrix = HN2vec(split, k, featureRank, networkRank, lambda, alpha)
+function ScoreMatrix = node2vec(split, k, featureRank, networkRank, lambda, alpha)
 %%%% INPUT PARAMS:
 %%% split       : One of the k-fold splits to be hidden.  %% 留一验证法, 记住用于训练的集合
 %%% k           : Rank of the parameter matrix Z. %% 作为参数的矩阵的秩
@@ -28,7 +28,7 @@ POSTFIX = '.mat';
 
 % 取第一个物种基因集作为训练集
 genePheneTraining = genesPhenes.GenePhene{1};
-genePheneTraining(:,25) = 0;
+%genePheneTraining(:,25) = 0;
 if (split > 0) %% else use all data to m ake predictions.
     splits = load('splitsUniform.mat');
     numPhenes = size(splits.splits{split},2); %%返回splits 中维度2的长度,得到基因表型的维度
@@ -71,9 +71,12 @@ end
 if (networkRank > 0)
     disp ('Reducing gene network dimensionality..');
     % Reducing dimensionality of gene-gene interaction network
-    network_filename = 'GeneGeneHs.mat';
-    network_features = load(network_filename);
-    features = [features network_features.features(1:genesPhenes.numGenes,:) ];
+  %  network_filename = 'GeneGeneHs.mat';
+  %  network_features = load(network_filename);
+  %  features = [features network_features.features(1:genesPhenes.numGenes,:) ];
+     network_filename = 'wvec300.mat';
+     network_features = load(network_filename);
+     features = [features network_features.wvec300(1:genesPhenes.numGenes,:) ];
    % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
    % 中的每个 Cell 同源基因
     PHENOTYPES_NAME = 'GP_SDAE';
@@ -132,13 +135,13 @@ matrix_filename = 'HN2vec_P.mat';
 [W,H,~,~] = imfTrain(sparse(double(genePheneTraining)), sparse(double(features)), sparse(double(col_features)),  ['-n 16 -t 15 -T 5 -g 20 -p 3 -a 0 -s 11 -k ', num2str(k), ' -l ', num2str(lambda),  ' -r ', num2str(alpha)]);
 save(matrix_filename,'W','H');
 ScoreMatrix = features * W *H' * col_features';
-scoreMatrixFilename = sprintf('HN2vec_ScoreMatrix_alpha=%.2f_lambda=%.2f.mat',alpha,lambda);
+scoreMatrixFilename = sprintf('node2vec_ScoreMatrix_alpha=%.2f_lambda=%.2f.mat',alpha,lambda);
 save(scoreMatrixFilename,'ScoreMatrix');
 load('splitsUniform.mat');
 cdf_rates = cdf(full(splits{1}), ScoreMatrix, 100);
-rates = recall(full(splits{1}), ScoreMatrix, 100);
-pres = precision(full(splits{1}), ScoreMatrix, 100);
-send_mail_upon_finished('node2vec ScoreMatrix got',sprintf('cdf best score=%.2f AUPRC=%.2f',num2str(cdf_rates(100)), num2str(trapz(rates(1:100), pres(1:100)))) , '18850544602@163.com');
+rates = recall(full(splits{1}), ScoreMatrix, 100) .*100;
+pres = precision(full(splits{1}), ScoreMatrix, 100) .*100;
+send_mail_upon_finished('node2vec ScoreMatrix got',sprintf('cdf best score=%.2f AUPRC=%.2f',cdf_rates(100), trapz(rates(1:100), pres(1:100))) , '18850544602@163.com');
 name = sprintf('node2vec_cdf%d',randi(10000));
 save(name, 'cdf_rates', 'rates', 'pres');
 toc
