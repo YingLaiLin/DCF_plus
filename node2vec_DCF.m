@@ -1,5 +1,5 @@
 
-function ScoreMatrix = node2vec(split, k, featureRank, networkRank, lambda, alpha)
+function ScoreMatrix = node2vec(split, k, featureRank, networkRank, lambda, alpha, fname)
 %%%% INPUT PARAMS:
 %%% split       : One of the k-fold splits to be hidden.  %% 留一验证法, 记住用于训练的集合
 %%% k           : Rank of the parameter matrix Z. %% 作为参数的矩阵的秩
@@ -74,9 +74,8 @@ if (networkRank > 0)
 %    network_filename = 'GeneGeneHsp1q2.mat';
 %    network_features = load(network_filename);
 %    features = [features network_features.features(1:genesPhenes.numGenes,:) ];
-     network_filename = 'wvec300.mat';
-     network_features = load(network_filename);
-     features = [features network_features.wvec300(1:genesPhenes.numGenes,:) ];
+     network_features = load(fname);
+     features = [features network_features.features(1:genesPhenes.numGenes,:) ];
    % Reducing dimensionality of orthologous phenotypes, 循环处理 GenePhene
    % 中的每个 Cell 同源基因
     PHENOTYPES_NAME = 'GP_SDAE';
@@ -142,7 +141,7 @@ cdf_rates = cdf(full(splits{1}), ScoreMatrix, 100);
 rates = recall(full(splits{1}), ScoreMatrix, 100) .*100;
 pres = precision(full(splits{1}), ScoreMatrix, 100) .*100;
 send_mail_upon_finished('node2vec ScoreMatrix got',sprintf('cdf best score=%.4f AUPRC=%.4f',cdf_rates(100), trapz(rates(1:100), pres(1:100))) , '18850544602@163.com');
-name = sprintf('node2vec_cdf%d',randi(10000));
+name = sprintf('cdf%d_%s',randi(10000),fname);
 save(name, 'cdf_rates', 'rates', 'pres');
 toc
 end
