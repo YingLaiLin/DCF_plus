@@ -83,7 +83,12 @@ function ScoreMatrix = IMC(split, k, featureRank, networkRank, loss, lambda)
 	ScoreMatrix = Features * W'*H * ColFeatures';
     scoreMatrixFilename = sprintf('IMC_ScoreMatrix_lambda_%.2f.mat',lambda);
     save(scoreMatrixFilename,'ScoreMatrix');
-    send_mail_upon_finished('IMC ScoreMatrix got',strcat(scoreMatrixFilename,' got') , '18850544602@163.com');
+%    load('splitsUniform.mat');
+%    cdf_rates = cdf(full(splits{1}),ScoreMatrix,100);
+%    rates = recall(full(splits{1}),ScoreMatrix, 100) .* 100;
+%    pres = precision(full(splits{1}),ScoreMatrix,100) .* 100;
+%    send_mail_upon_finished('IMC ScoreMatrix got',sprintf('cdf best score=%.4f AUPRC=%.4f', cdf_rates(100), trapz(rates(1:100),pres(1:100))), '18850544602@163.com');
+%    save(name, 'cdf_rates','rates','pres');
 end
 
 

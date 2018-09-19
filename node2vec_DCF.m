@@ -1,5 +1,5 @@
 
-function ScoreMatrix = node2vec(split, k, featureRank, networkRank, lambda, alpha, fname)
+function ScoreMatrix = node2vec(split_index, k, featureRank, networkRank, lambda, alpha, fname)
 %%%% INPUT PARAMS:
 %%% split       : One of the k-fold splits to be hidden.  %% 留一验证法, 记住用于训练的集合
 %%% k           : Rank of the parameter matrix Z. %% 作为参数的矩阵的秩
@@ -29,10 +29,10 @@ POSTFIX = '.mat';
 % 取第一个物种基因集作为训练集
 genePheneTraining = genesPhenes.GenePhene{1};
 %genePheneTraining(:,25) = 0;
-if (split > 0) %% else use all data to m ake predictions.
+if (split_index > 0) %% else use all data to m ake predictions.
     splits = load('splitsUniform.mat');
-    numPhenes = size(splits.splits{split},2); %%返回splits 中维度2的长度,得到基因表型的维度
-    genePheneTraining = genePheneTraining(:,1:numPhenes) - splits.splits{split}; %% 为什么要做减法?
+    numPhenes = size(splits.splits{split_index},2); %%返回splits 中维度2的长度,得到基因表型的维度
+    genePheneTraining = genePheneTraining(:,1:numPhenes) - splits.splits{split_index}; %% 为什么要做减法?
 end
 features = [];  %% 行特征 -- gene
 col_features = []; %% 列特征 -- disease
@@ -133,16 +133,26 @@ fprintf('Using %d row, %d col features.\n', size(features,2), size(col_features,
 matrix_filename = 'HN2vec_P.mat';
 [W,H,~,~] = imfTrain(sparse(double(genePheneTraining)), sparse(double(features)), sparse(double(col_features)),  ['-n 16 -t 15 -T 5 -g 20 -p 3 -a 0 -s 11 -k ', num2str(k), ' -l ', num2str(lambda),  ' -r ', num2str(alpha)]);
 save(matrix_filename,'W','H');
+save('features.mat', 'features');
+save('colFeatures.mat','col_features');
 ScoreMatrix = features * W *H' * col_features';
 scoreMatrixFilename = sprintf('node2vec_ScoreMatrix_alpha=%.2f_lambda=%.2f.mat',alpha,lambda);
 save(scoreMatrixFilename,'ScoreMatrix');
-load('splitsUniform.mat');
-cdf_rates = cdf(full(splits{1}), ScoreMatrix, 100);
-rates = recall(full(splits{1}), ScoreMatrix, 100) .*100;
-pres = precision(full(splits{1}), ScoreMatrix, 100) .*100;
-send_mail_upon_finished('node2vec ScoreMatrix got',sprintf('cdf best score=%.4f AUPRC=%.4f',cdf_rates(100), trapz(rates(1:100), pres(1:100))) , '18850544602@163.com');
-name = sprintf('cdf%d_%s',randi(10000),fname);
-save(name, 'cdf_rates', 'rates', 'pres');
+%load('splitsUniform.mat');
+%cdf_rates = cdf(full(splits{1}), ScoreMatrix, 100) ;
+%rates = recall(full(splits{1}), ScoreMatrix, 100) .*100 ;
+%pres = precision(full(splits{1}), ScoreMatrix, 100) .*100 ;
+%for s_index = [2,3]
+%    cdf_rates = cdf(full(splits{s_index}), ScoreMatrix, 100) + cdf_rates;
+%    rates = recall(full(splits{s_index}), ScoreMatrix, 100) .*100 + rates;
+%    pres = precision(full(splits{s_index}), ScoreMatrix, 100) .*100 + pres;
+%cdf_rates = cdf_rates/3;
+%rates = rates/3;
+%pres = pres/3;
+%x = fname(strfind(fname,'/') + 1:end);
+%name = sprintf('cdf%d_%s',randi(10000),x);
+%send_mail_upon_finished('node2vec ScoreMatrix got',sprintf('lambda %.3f alpha %.3f %s cdf best score=%.4f AUPRC=%.4f,save at %s',lambda, alpha, fname,cdf_rates(100), trapz(rates(1:100), pres(1:100)),name) , '18850544602@163.com');
+%save(name, 'fname','cdf_rates', 'rates', 'pres');
 toc
 end
 

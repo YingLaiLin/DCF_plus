@@ -27,7 +27,7 @@ my.iter = 1;
 do_pretrain = 1;
 %gpuDevice(gd);
 gpuDevice;
-
+disp(my.save);
 my.save_lag = sl;
 my.sdae.n_epoch = nepo;
 my.dae.n_epoch = 500;
